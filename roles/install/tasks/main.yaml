@@ -1,0 +1,39 @@
+- name: Install apt-transport-https
+  apt:
+    update_cache: yes
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - gnupg2
+      - python3-pip
+      - git
+- name: Add helm apt key
+  apt_key:
+    url: https://baltocdn.com/helm/signing.asc
+    state: present
+- name: Add kubernetes apt key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+- name: Add helm repository
+  apt_repository:
+    repo: deb https://baltocdn.com/helm/stable/debian/ all main
+    state: present
+- name: Add kubernetes apt repository
+  apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+- name: Install helm
+  apt:
+    name: helm
+- name: Install kubectl
+  apt:
+    name: kubectl={{ kubernetes_version }}-00
+- name: Install kubelet
+  apt:
+    name: kubelet={{ kubernetes_version }}-00
+- name: Install kubeadm
+  apt:
+    name: kubeadm={{ kubernetes_version }}-00

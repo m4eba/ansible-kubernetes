@@ -1,0 +1,8 @@
+---
+- name: replace listen ip of kubelet
+  ansible.builtin.replace:
+    path: /var/lib/kubelet/config.yaml
+    regexp: 'address: .*\n'
+    replace: 'address: {{ kubernetes_ip }}\n'
+  notify: restart kubelet
+  when: kubeadm_exists

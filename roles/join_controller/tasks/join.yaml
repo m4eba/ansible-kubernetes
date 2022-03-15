@@ -1,0 +1,49 @@
+---
+- name: copy join config
+  template:
+    src: join.yaml.j2
+    dest: /tmp/join.yaml
+    mode: 0644
+
+- name: Join phase preflight
+  become: true
+  when: not kubeadm_ca.stat.exists
+  command: |
+    kubeadm join phase preflight \
+    --config=/tmp/join.yaml \
+    --ignore-preflight-errors=NumCPU
+
+- name: Join phase control-plane-prepare
+  become: true
+  when: not kubeadm_ca.stat.exists
+  command: |
+    kubeadm join phase control-plane-prepare all \
+    --config=/tmp/join.yaml
+
+- name: read file
+  become: true
+  slurp:
+    src: /etc/kubernetes/manifests/kube-apiserver.yaml
+  register: apiserver_file
+- name: get ip
+  set_fact:
+    wrong_ip: "{{ apiserver_file['content'] | b64decode | regex_findall('bind-address=(.*)') }}"
+- name: replace ips
+  become: true
+  replace:
+    path: '/etc/kubernetes/manifests/{{ item }}'
+    regexp: '{{ wrong_ip[0] }}'
+    replace: '{{ kubernetes_ip }}'
+  with_items:
+    - 'kube-apiserver.yaml'
+    - 'kube-controller-manager.yaml'
+- name: run missing phases
+  become: true
+  command: |
+    kubeadm join --skip-phases=preflight,control-plane-prepare  \
+    --config=/tmp/join.yaml
+  register: join_command_output
+  changed_when: join_command_output.rc == 0
+- name: set kubeadm_exists
+  set_fact:
+    kubeadm_exists: true

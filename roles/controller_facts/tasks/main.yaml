@@ -1,0 +1,55 @@
+---
+- name: Check if kubeadm has already run
+  stat:
+    path: '/etc/kubernetes/pki/ca.key'
+  register: kubeadm_ca
+
+- name: Set var kubeadm_exists
+  set_fact:
+    kubeadm_exists: '{{ kubeadm_ca.stat.exists }}'
+
+- name: debug kubeadm
+  debug:
+    var: kubeadm_exists
+
+- name: set api_healthy
+  set_fact:
+    api_healthy: false
+
+- block:
+    - name: Check kubernetes api
+      uri:
+        url: https://{{ kubernetes_ip }}:6443/livez?verbose
+        method: GET
+        validate_certs: no
+        force: yes
+        return_content: yes
+        status_code: [-1, 200]
+        timeout: 10
+      register: api_health_check_output
+    - name: Set var api_healthy
+      set_fact:
+        api_healthy: "{{ 'check passed' in api_health_check_output.content }}"
+    - name: set localhost healthy node
+      set_fact:
+        healthy_node: '{{ inventory_hostname }}'
+      delegate_to: localhost
+      delegate_facts: true
+    - name: add to controller_healthy group
+      add_host:
+        name: '{{ inventory_hostname }}'
+        groups:
+          - controller_healthy
+      when: api_healthy
+  when: kubeadm_exists
+
+- name: debug
+  debug:
+    var: api_healthy
+
+- name: Set localhost need_token
+  delegate_to: localhost
+  delegate_facts: true
+  set_fact:
+    need_token: '{{ not api_healthy }}'
+  when: not api_healthy

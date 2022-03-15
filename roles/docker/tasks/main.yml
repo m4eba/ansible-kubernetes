@@ -1,0 +1,26 @@
+---
+- name: Create etc docker directory
+  file:
+    path: /etc/docker/
+    state: directory
+    mode: 0644
+
+- name: Copy docker daemon config
+  copy:
+    src: 'daemon.json'
+    dest: /etc/docker/daemon.json
+    mode: 0644
+
+- name: Add docker apt key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add docker apt repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release | lower }} stable
+    state: present
+
+- name: Install docker
+  apt:
+    name: docker-ce

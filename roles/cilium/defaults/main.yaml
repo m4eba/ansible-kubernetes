@@ -1,0 +1,3 @@
+cilium_version: 1.10.6
+cilium_tunnel: vxlan
+cilium_enable_endpoint_routes: false

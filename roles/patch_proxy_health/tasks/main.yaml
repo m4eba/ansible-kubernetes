@@ -1,0 +1,12 @@
+---
+- name: Check if kube proxy is already patched
+  ansible.builtin.shell: |
+    set -e -o pipefail
+    kubectl get ds kube-proxy -n kube-system -o yaml | grep hostIP
+  register: hostip_out
+  changed_when: false
+  failed_when: false
+  args:
+    executable: /bin/bash
+- include_tasks: apply.yaml
+  when: hostip_out.rc == 1

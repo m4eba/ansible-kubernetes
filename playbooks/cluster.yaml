@@ -1,0 +1,97 @@
+---
+- name: Prepare server and install packages
+  hosts: k8s_controller k8s_worker
+  become: yes
+  roles:
+    - { role: prepare, tags: prepare }
+    - { role: docker, tags: docker }
+    - { role: install, tags: install }
+
+- name: Collection facts
+  hosts: k8s_controller
+  roles:
+    - { role: controller_facts, tags: controller_facts }
+
+- name: Init controller node
+  hosts: k8s_controller
+  run_once: true
+  roles:
+    - role: init
+      tags: init
+      when: hostvars["localhost"]["healthy_node"] is not defined
+
+- name: Test for unjoined controller nodes if api is healthy
+  hosts: k8s_controller
+  vars:
+    file: 'ca.key'
+  roles:
+    - role: kubeadm_check
+      tags: kubeadm_check
+      when: hostvars["localhost"]["healthy_node"] is defined
+- name: Test for unjoined worker nodes if api is healthy
+  hosts: k8s_worker
+  vars:
+    file: 'ca.crt'
+  roles:
+    - role: kubeadm_check
+      tags: kubeadm_check
+      when: hostvars["localhost"]["healthy_node"] is defined
+
+- name: debug
+  hosts: localhost
+  tasks:
+    - name: debug healthy_node
+      debug:
+        var: healthy_node
+    - name: debug need_token
+      debug:
+        var: need_token
+
+- name: get join token
+  hosts: controller_healthy
+  run_once: true
+  roles:
+    - role: token
+      tags: token
+      when: hostvars["localhost"]["need_token"] is defined
+
+- name: join controller nodes
+  hosts: k8s_controller
+  roles:
+    - role: join_controller
+      tags: join_controller
+
+- name: join worker nodes
+  hosts: k8s_worker
+  roles:
+    - role: join_worker
+      tags: join_worker
+
+- name: copy config for controller
+  hosts: k8s_controller
+  vars:
+    file: 'admin.conf'
+  roles:
+    - role: copy_config
+      tags: copy_config
+
+- name: copy config for worker
+  hosts: k8s_worker
+  vars:
+    file: 'kubelet.conf'
+  roles:
+    - role: copy_config
+      tags: copy_config
+
+- name: use private network
+  hosts: k8s_controller k8s_worker
+  roles:
+    - role: replace_kubelet_address
+      tags: replace_kubelet_address
+
+- name: patch kube proxy daemonset
+  hosts: k8s_controller
+  run_once: true
+  roles:
+    - role: patch_proxy_health
+      tags: patch_proxy_health

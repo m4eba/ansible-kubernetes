@@ -1,0 +1,28 @@
+---
+- name: Add cilium helm repository
+  kubernetes.core.helm_repository:
+    name: cilium
+    repo_url: https://helm.cilium.io/
+
+- name: Deploy cilium
+  kubernetes.core.helm:
+    name: cilium
+    chart_ref: cilium/cilium
+    chart_version: '{{ cilium_version }}'
+    release_namespace: kube-system
+    # see https://stackoverflow.com/a/64781316
+    release_values:
+      # see https://github.com/cilium/cilium/issues/15170
+      ipam:
+        mode: kubernetes
+      tunnel: '{{ cilium_tunnel }}'
+      enableEndpointRoutes: '{{ cilium_enable_endpoint_routes }}'
+    #    operator:
+    #      clusterPoolIPv4PodCIDR: '10.1.0.0/16'
+    #  tunnel: disabled
+    #  nativeRoutingCIDR: '{{ pod_network_cidr }}'
+    #  enableEndpointRoutes: true
+    #  prometheus.enabled: true
+    #  operator.prometheus.enabled: true
+    #  hubble.enabled: true
+    #  hubble.metrics.enabled: '{dns,drop,tcp,flow,port-distribution,icmp,http}'

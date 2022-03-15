@@ -1,0 +1,63 @@
+---
+- name: copy config
+  template:
+    src: kube.yaml.j2
+    dest: /tmp/kube.yaml
+    mode: 0644
+
+- name: Init Kubernetes
+  become: true
+  shell: |
+    kubeadm init  --config=/tmp/kube.yaml \
+                  --ignore-preflight-errors=NumCPU \
+                  --upload-certs
+  changed_when: init_cluster.rc == 0
+  register: init_cluster
+
+- name: Wait for kubernetes api
+  uri:
+    url: 'https://{{ kubernetes_ip }}:6443/livez?verbose'
+    method: GET
+    validate_certs: no
+    force: yes
+    return_content: yes
+    status_code: [200]
+    timeout: 10
+  register: api_health_wait_output
+  until: api_health_wait_output.status == 200
+  retries: 60
+  delay: 10
+
+- name: Create Kubernetes config directory
+  file:
+    path: '.kube'
+    state: directory
+    mode: '0700'
+
+- name: Copy admin.conf to home directory
+  become: true
+  when: init_cluster is succeeded
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: '.kube/config'
+    mode: '0700'
+    remote_src: true
+
+- name: add to controller_healthy group
+  add_host:
+    name: '{{ inventory_hostname }}'
+    groups:
+      - controller_healthy
+
+- name: Set localhost api_healthy
+  set_fact:
+    api_healthy: true
+  delegate_to: localhost
+  delegate_facts: true
+
+- name: Set need token
+  set_fact:
+    need_token: true
+  delegate_to: localhost
+  delegate_facts: true
+  when: groups['k8s_controller'] | length  > 1

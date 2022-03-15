@@ -1,0 +1,36 @@
+---
+# see https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/#steps-for-the-first-control-plane-node
+- name: Get certificate Key
+  become: true
+  command: kubeadm init phase upload-certs --upload-certs --config=/tmp/kube.yaml
+  changed_when: cert_output.rc == 0
+  register: cert_output
+- name: Extract cert
+  delegate_to: localhost
+  delegate_facts: true
+  set_fact: cert={{ cert_output.stdout_lines | last }}
+# see https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#join-nodes
+- name: Get hash
+  shell: |
+    set -e -o pipefail
+    openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+  register: hash_output
+  changed_when: false
+  args:
+    executable: /bin/bash  
+- name: Extract hash
+  delegate_to: localhost
+  delegate_facts: true
+  set_fact: hash={{ hash_output.stdout_lines | last }}
+# see https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#join-nodes
+- name: Get join Token
+  command: kubeadm token create
+  changed_when: token_output.rc == 0
+  register: token_output
+- name: debug
+  debug:
+    var: token_output
+- name: Extract token
+  delegate_to: localhost
+  delegate_facts: true
+  set_fact: token={{ token_output.stdout_lines | last }}

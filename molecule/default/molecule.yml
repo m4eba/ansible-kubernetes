@@ -1,0 +1,49 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+platforms:
+  - name: controller1
+    box: generic/ubuntu2004
+    instance_raw_config_args:
+      - "vm.network 'private_network', ip: '192.168.50.11'"
+    groups:
+      - etcd
+      - controller
+  - name: controller2
+    box: generic/ubuntu2004
+    instance_raw_config_args:
+      - "vm.network 'private_network', ip: '192.168.50.12'"
+    groups:
+      - etcd
+      - controller
+  - name: controller3
+    box: generic/ubuntu2004
+    instance_raw_config_args:
+      - "vm.network 'private_network', ip: '192.168.50.13'"
+    groups:
+      - etcd
+      - controller
+  - name: worker1
+    box: generic/ubuntu2004
+    instance_raw_config_args:
+      - "vm.network 'private_network', ip: '192.168.50.21'"
+    groups:
+      - worker
+  - name: worker2
+    box: generic/ubuntu2004
+    instance_raw_config_args:
+      - "vm.network 'private_network', ip: '192.168.50.22'"
+    groups:
+      - worker
+  - name: worker3
+    box: generic/ubuntu2004
+    instance_raw_config_args:
+      - "vm.network 'private_network', ip: '192.168.50.23'"
+    groups:
+      - worker
+provisioner:
+  name: ansible
+verifier:
+  name: ansible

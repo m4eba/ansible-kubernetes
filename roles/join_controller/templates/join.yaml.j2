@@ -1,0 +1,19 @@
+---
+apiVersion: 'kubeadm.k8s.io/v1beta2'
+kind: JoinConfiguration
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: {{kubernetes_ip}}
+{% if kubernetes_cloud_provider is defined %}    
+    cloud-provider: {{kubernetes_cloud_provider}}
+{% endif %}     
+controlPlane:
+  localAPIEndpoint:
+    advertiseAddress: {{kubernetes_ip}}
+  certificateKey: {{hostvars['localhost']['cert']}}
+discovery:
+  bootstrapToken:
+    token: {{hostvars['localhost']['token']}}
+    apiServerEndpoint: {{kubernetes_load_balancer_ip}}:{{kubernetes_load_balancer_port}}
+    caCertHashes: 
+      - sha256:{{hostvars['localhost']['hash']}}

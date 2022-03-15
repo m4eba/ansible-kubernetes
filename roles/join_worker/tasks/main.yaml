@@ -1,0 +1,21 @@
+---
+- name: Check if kubeadm has already run
+  stat:
+    path: '/etc/kubernetes/pki/ca.crt'
+  register: kubeadm_ca
+- name: copy join config
+  template:
+    src: join.yaml.j2
+    dest: /tmp/join.yaml
+    mode: 0644
+  when: not kubeadm_ca.stat.exists
+- name: Join worker
+  become: true
+  when: not kubeadm_ca.stat.exists
+  command: |
+    kubeadm join  \
+    --ignore-preflight-errors=NumCPU \
+    --config=/tmp/join.yaml
+- name: set kubeadm_exists
+  set_fact:
+    kubeadm_exists: true

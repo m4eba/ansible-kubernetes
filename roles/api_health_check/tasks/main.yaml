@@ -1,0 +1,24 @@
+---
+- name: Check kubernetes api
+  uri:
+    url: https://{{ ip }}:6443/livez?verbose
+    method: GET
+    validate_certs: no
+    force: yes
+    return_content: yes
+    status_code: [-1, 200]
+    timeout: 10
+  register: api_health_check_output
+- name: Set var api_healthy
+  set_fact:
+    api_healthy: "{{ 'check passed' in api_health_check_output.content }}"
+- name: Set localhost api_healthy
+  set_fact:
+    api_healthy: '{{ api_healthy }}'
+  delegate_to: localhost
+  delegate_facts: true
+- name: Set localhost need_token
+  set_fact:
+    need_token: '{{ not api_healthy }}'
+  delegate_to: localhost
+  delegate_facts: true

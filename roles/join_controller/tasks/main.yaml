@@ -1,0 +1,9 @@
+---
+- name: Check if kubeadm has already run
+  stat:
+    path: '/etc/kubernetes/pki/ca.key'
+  register: kubeadm_ca
+
+- name: join
+  include_tasks: join.yaml
+  when: not kubeadm_ca.stat.exists

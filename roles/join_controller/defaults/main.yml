@@ -1,0 +1,4 @@
+kubernetes_pod_network_cidr: 10.244.0.0/16
+kubernetes_pki_etcd_path: /etc/kubernetes/pki/etcd
+kubernetes_etcd_prefix: /registry
+kubernetes_load_balancer_port: 6443

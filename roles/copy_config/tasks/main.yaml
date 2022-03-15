@@ -1,0 +1,14 @@
+---
+- name: Create Kubernetes config directory
+  file:
+    path: '.kube'
+    state: directory
+    mode: '0700'
+
+- name: Copy config file to home directory
+  become: true
+  copy:
+    src: /etc/kubernetes/{{ file }}
+    dest: '.kube/config'
+    mode: '0700'
+    remote_src: true

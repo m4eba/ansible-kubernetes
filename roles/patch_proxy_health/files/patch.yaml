@@ -1,0 +1,34 @@
+spec:
+  template:
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/kube-proxy
+            - --config=/config/config.conf
+            - --hostname-override=$(NODE_NAME)
+          name: kube-proxy
+          volumeMounts:
+            - mountPath: /config
+              name: config
+      initContainers:
+        - command:
+            - sh
+            - -c
+            - cat /var/lib/kube-proxy/config.conf |
+              sed 's/\(healthzBindAddress:\) .*$/\1  $(NODE_HOSTIP):10256/' |
+              sed 's/\(bindAddress:\) .*$/\1 $(NODE_HOSTIP)/' > /config/config.conf
+          env:
+            - name: NODE_HOSTIP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          image: busybox:1.28
+          name: healtz-bind-address
+          volumeMounts:
+            - mountPath: /var/lib/kube-proxy
+              name: kube-proxy
+            - mountPath: /config
+              name: config
+      volumes:
+        - emptyDir: {}
+          name: config

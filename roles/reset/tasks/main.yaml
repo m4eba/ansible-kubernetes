@@ -1,0 +1,6 @@
+---
+- name: Reset Kubernetes
+  become: true
+  command: 'kubeadm reset --force'
+  changed_when: reset_cluster.rc == 0
+  register: reset_cluster

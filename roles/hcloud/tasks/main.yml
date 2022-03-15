@@ -1,0 +1,8 @@
+---
+- name: look for secret
+  ansible.builtin.command: kubectl get secret hcloud -n kube-system
+  register: secret_out
+  changed_when: false
+  failed_when: false
+- include_tasks: install.yaml
+  when: secret_out.rc == 1

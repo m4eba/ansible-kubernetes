@@ -1,0 +1,12 @@
+namespace: m4eba
+name: kubernetes
+version: 0.0.1
+readme: README.md
+authors:
+  - m4eba
+description: An ansible collection for kuberentes cluster with kubeadm.
+license_file: 'LICENSE'
+tags: []
+dependencies: { }
+repository: http://github.com/m4eba/ansible-kubernetes
+issues: http://github.com/m4eba/ansible-kubernetes/issues

@@ -1,0 +1,10 @@
+---
+- name: copy patch
+  copy:
+    src: patch.yaml
+    dest: /tmp/patch.yaml
+    mode: 0644
+- name: apply patch
+  ansible.builtin.shell: kubectl patch ds kube-proxy -n kube-system --patch "$(cat /tmp/patch.yaml)"
+  changed_when: patch_output.rc == 0
+  register: patch_output

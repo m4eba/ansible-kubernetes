@@ -1,0 +1,25 @@
+---
+- name: debug kubeadm_exists
+  debug:
+    var: kubeadm_exists
+
+- name: Init cluster if needed
+  include_tasks: init.yaml
+  when: not kubeadm_exists
+  run_once: yes
+
+- name: Enable and check kubelet service
+  become: true
+  systemd:
+    name: kubelet
+    daemon_reload: yes
+    state: started
+    enabled: yes
+  register: started_kubelet
+
+# set this at the end, nothing will be executed after this
+- name: set healthy node
+  set_fact:
+    healthy_node: '{{ inventory_hostname }}'
+  delegate_to: localhost
+  delegate_facts: true

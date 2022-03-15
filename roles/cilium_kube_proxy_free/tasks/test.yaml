@@ -1,0 +1,19 @@
+---
+- name: check if tunnel is already disabled
+  ansible.builtin.shell: |
+    set -e -o pipefail
+    kubectl get cm cilium-config -n kube-system -o yaml | grep "tunnel: disabled"
+  register: tunnel_out
+  changed_when: false
+  failed_when: false
+  args:
+    executable: /bin/bash  
+- include_tasks: apply.yaml
+  when: tunnel_out.rc == 1
+- name: set localhost kube_proxy_free_routing
+  set_fact:
+    kube_proxy_free_routing: true
+  delegate_to: localhost
+  delegate_facts: true
+  when: tunnel_out.rc == 1
+  

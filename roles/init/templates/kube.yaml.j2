@@ -1,0 +1,50 @@
+apiVersion: 'kubeadm.k8s.io/v1beta2'
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{kubernetes_ip}}
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: {{kubernetes_ip}}
+{% if kubernetes_cloud_provider is defined %}    
+    cloud-provider: {{kubernetes_cloud_provider}}
+{% endif %}    
+---
+apiVersion: 'kubeadm.k8s.io/v1beta2'
+kind: ClusterConfiguration
+controlPlaneEndpoint: {{kubernetes_load_balancer_ip}}:{{kubernetes_load_balancer_port}}
+#controllerManager:
+#  extraArgs:
+#    bind-address: {{kubernetes_ip}}
+apiServer:  
+  certSANs:
+    - {{kubernetes_ip}}
+    - controller-endpoint
+    - {{kubernetes_load_balancer_ip}}
+  extraArgs:
+    advertise-address: {{kubernetes_ip}}
+    bind-address: {{kubernetes_ip}}
+    etcd-prefix: {{kubernetes_etcd_prefix}}
+etcd:
+  external:
+    endpoints:
+{% for s in groups['etcd'] %}
+      - https://{{ hostvars[s].etcd_ip }}:2379
+{% endfor %}   
+    caFile: {{kubernetes_pki_etcd_path}}/ca.crt
+    certFile: {{kubernetes_pki_etcd_path}}/etcd.crt
+    keyFile: {{kubernetes_pki_etcd_path}}/etcd.key
+networking:
+  podSubnet: {{kubernetes_pod_network_cidr}}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+address: {{kubernetes_ip}}
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+bindAddress: {{kubernetes_ip}}
+healthzBindAddress: {{kubernetes_ip}}:10256
+{% if kubernetes_nodeport_addresses is defined %}
+nodePortAddresses: {{kubernetes_nodeport_addresses}}
+{% endif %}
+mode: "ipvs"

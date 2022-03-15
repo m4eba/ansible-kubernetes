@@ -1,0 +1,12 @@
+---
+# see https://docs.cilium.io/en/latest/gettingstarted/kubeproxy-free/
+- name: test
+  include_tasks: test.yaml
+  when: hostvars["localhost"]["kube_proxy_free_routing"] is not defined
+- name: adjust routing
+  ansible.builtin.shell: |
+    set -e -o pipefail
+    iptables-save | grep -v KUBE | iptables-restore
+  when: hostvars["localhost"]["kube_proxy_free_routing"] is defined
+  args:
+    executable: /bin/bash

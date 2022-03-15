@@ -1,0 +1,19 @@
+---
+- name: Load br_netfilter kernel module
+  modprobe:
+    name: br_netfilter
+    state: present
+- name: Setup kernel parameters for k8s
+  sysctl: name={{ item.name }} value={{ item.value }} state=present
+  with_items:
+    - { name: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    - { name: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+    - { name: 'net.ipv4.ip_forward', value: '1' }
+    - { name: 'net.ipv4.ip_nonlocal_bind', value: '1' }
+
+- name: Add controller cluster ip to hosts
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      # controller endpoint ip
+      {{ kubernetes_load_balancer_ip }} controller-endpoint
