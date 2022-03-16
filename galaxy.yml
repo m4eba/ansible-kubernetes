@@ -7,6 +7,8 @@ authors:
 description: An ansible collection for kuberentes cluster with kubeadm.
 license_file: 'LICENSE'
 tags: []
-dependencies: { }
+dependencies:
+  community.general: '>=4.2.0'
+  kubernetes.core: '>=2.2.2'
 repository: http://github.com/m4eba/ansible-kubernetes
 issues: http://github.com/m4eba/ansible-kubernetes/issues
